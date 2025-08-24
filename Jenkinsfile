@@ -16,6 +16,7 @@ pipeline {
             steps {
                 script {
                     app = docker.build('prasannapujar/selenium')
+                    echo "Docker Image Built Successfully"
                 }
             }
         }
@@ -24,6 +25,7 @@ pipeline {
             steps{
                 script {
                     // registry url is blank for dockerhub
+                    echo "pushing image to dockerhub"
                     docker.withRegistry('', 'dockerhub-creds') {
                         app.push("latest")
                     }
