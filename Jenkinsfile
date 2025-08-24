@@ -1,37 +1,46 @@
-pipeline {
-    agent none
-    stages {
-        stage('Build Jar') {
-            agent {
-                docker {
-                    image 'maven:3.9.3-eclipse-temurin-17-focal'
-                  //  args '-u root -v /tmp/m2:/root/.m2'
-                }
-            }
-            steps {
+pipeline{
+
+    agent any
+
+    stages{
+
+        stage('Build Jar'){
+            steps{
+            echo " Building the jar file"
                 sh 'mvn clean package -DskipTests'
             }
         }
-        stage('Build Image') {
-            steps {
-                script {
-                    app = docker.build('prasannapujar/selenium')
-                    echo "Docker Image Built Successfully"
-                }
+
+        stage('Build Image'){
+            steps{
+                sh 'docker build -t=prasannapujar/selenium:latest .'
+
             }
         }
 
         stage('Push Image'){
+            environment{
+                DOCKER_HUB = credentials('dockerhub-creds')
+            }
             steps{
-                script {
-                    // registry url is blank for dockerhub
-                    echo "pushing image to dockerhub"
-                    docker.withRegistry('', 'dockerhub-creds') {
-                        app.push("latest")
-                    }
-                }
+//                 sh 'echo ${DOCKER_HUB_PSW} | docker login -u ${DOCKER_HUB_USR} --password-stdin'
+//                 sh 'docker push prasannapujar/selenium:latest'
+//                 sh "docker tag prasannapujar/selenium:latest vinsdocker/selenium:${env.BUILD_NUMBER}"
+//                 sh "docker push prasannapujar/selenium:${env.BUILD_NUMBER}"
+//                   sh 'docker login -u ${DOCKER_HUB_USR} -p ${DOCKER_HUB_PSW}'
+                     sh 'echo ${DOCKER_HUB_PSW} | docker login -u $DOCKER_HUB_USR --password-stdin'
+                     sh 'docker push prasannapujar/selenium:latest'
+                     sh "docker tag prasannapujar/selenium:latest prasannapujar/selenium:${env.BUILD_NUMBER}"
+                     sh "docker push prasannapujar/selenium:${env.BUILD_NUMBER}"
             }
         }
 
     }
+
+    post {
+        always {
+            sh 'docker logout'
+        }
+    }
+
 }

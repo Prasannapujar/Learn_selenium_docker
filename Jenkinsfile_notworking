@@ -1,0 +1,37 @@
+pipeline {
+    agent none
+    stages {
+        stage('Build Jar') {
+            agent {
+                docker {
+                    image 'maven:3.9.3-eclipse-temurin-17-focal' // this also intially had the problem as we were using Java 21 to compile once i changed the java to 17 in POM it stated working fine
+                  //  args '-u root -v /tmp/m2:/root/.m2'
+                }
+            }
+            steps {
+                sh 'mvn clean package -DskipTests'
+            }
+        }
+        stage('Build Image') {
+            steps {
+                script {
+                    app = docker.build('prasannapujar/selenium')
+                    echo "Docker Image Built Successfully"
+                }
+            }
+        }
+
+        stage('Push Image'){
+            steps{
+                script {
+                    // registry url is blank for dockerhub
+                    echo "pushing image to dockerhub"
+                    docker.withRegistry('', 'dockerhub-creds') { // problem is at here the login to github is not working
+                        app.push("latest")
+                    }
+                }
+            }
+        }
+
+    }
+}
